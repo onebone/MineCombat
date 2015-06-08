@@ -272,9 +272,9 @@ class MineCombat extends PluginBase implements Listener{
 	}
 	
 	public function onCommand(CommandSender $sender, Command $command, $label, array $params){
-        if(!($sender instanceof Player)){
-            return true;
-        }
+		if(!($sender instanceof Player)){
+			return true;
+		}
 
 		switch($command->getName()){
 			case "rank":
@@ -311,7 +311,7 @@ class MineCombat extends PluginBase implements Listener{
 			return true;
 		}
 
-        return true;
+		return true;
 	}
 	
 	public function onInteract(PlayerInteractEvent $event){
@@ -392,9 +392,9 @@ class MineCombat extends PluginBase implements Listener{
 		
 		if($this->status === self::STAT_GAME_IN_PROGRESS){			
 			$cause = $player->getLastDamageCause();
-            if(!($cause instanceof EntityDamageByEntityEvent)){
-                return;
-            }
+			if(!($cause instanceof EntityDamageByEntityEvent)){
+				return;
+			}
 
 			if($cause !== null and $cause->getCause() === 15){
 				$damager = $cause->getDamager();
