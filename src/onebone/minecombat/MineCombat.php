@@ -122,13 +122,11 @@ class MineCombat extends PluginBase implements Listener{
 	public function endGame(){
 		$this->status = self::STAT_GAME_END;
 		
-		$winner = "";
+		$winner = TextFormat::YELLOW."TIED".TextFormat::RESET;
 		if($this->score[self::TEAM_RED] > $this->score[self::TEAM_BLUE]){
 			$winner = TextFormat::RED."RED".TextFormat::RESET." team win";
 		}elseif($this->score[self::TEAM_BLUE] > $this->score[self::TEAM_RED]){
 			$winner = TextFormat::BLUE."BLUE".TextFormat::RESET." team win";
-		}else{
-			$winner = TextFormat::YELLOW."TIED".TextFormat::RESET;
 		}
 		
 		foreach($this->getServer()->getOnlinePlayers() as $player){
@@ -173,7 +171,7 @@ class MineCombat extends PluginBase implements Listener{
 		return $ret;
 	}
 	
-	public function teleportToSpawn($player){
+	public function teleportToSpawn(Player $player){
 		if($this->status !== self::STAT_GAME_IN_PROGRESS) return;
 		
 		$team = $this->players[$player->getName()][2];
@@ -196,7 +194,7 @@ class MineCombat extends PluginBase implements Listener{
 	public function showPopup(){
 		if($this->status === self::STAT_GAME_IN_PROGRESS){
 			$now = time();
-			
+
 			foreach($this->getServer()->getOnlinePlayers() as $player){
 				if(!isset($this->players[$player->getName()])) continue;
 				$msg = "";
@@ -266,6 +264,10 @@ class MineCombat extends PluginBase implements Listener{
 	}
 	
 	public function onCommand(CommandSender $sender, Command $command, $label, array $params){
+        if(!($sender instanceof Player)){
+            return true;
+        }
+
 		switch($command->getName()){
 			case "rank":
 			
@@ -300,6 +302,8 @@ class MineCombat extends PluginBase implements Listener{
 			}
 			return true;
 		}
+
+        return true;
 	}
 	
 	public function onInteract(PlayerInteractEvent $event){
@@ -380,6 +384,10 @@ class MineCombat extends PluginBase implements Listener{
 		
 		if($this->status === self::STAT_GAME_IN_PROGRESS){			
 			$cause = $player->getLastDamageCause();
+            if(!($cause instanceof EntityDamageByEntityEvent)){
+                return;
+            }
+
 			if($cause !== null and $cause->getCause() === 15){
 				$damager = $cause->getDamager();
 				if($damager instanceof Player){
