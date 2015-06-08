@@ -45,7 +45,10 @@ class MineCombat extends PluginBase implements Listener{
 	private $rank, $team, $players, $score, $status, $spawnPos, $threads, $level;
 	
 	private static $obj;
-	
+
+	/**
+	 * @return MineCombat
+	 */
 	public static function getInstance(){
 		return self::$obj;
 	}
@@ -151,7 +154,12 @@ class MineCombat extends PluginBase implements Listener{
 		}
 		return false;
 	}
-	
+
+	/**
+	 * @param string $player
+	 *
+	 * @return Pistol|null
+	 */
 	public function getGunByPlayer($player){
 		if($player instanceof Player){
 			$player = $player->getName();

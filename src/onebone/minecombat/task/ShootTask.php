@@ -9,7 +9,29 @@ use onebone\minecombat\MineCombat;
 
 class ShootTask extends AsyncTask{
 	public $ret = [];
-	
+
+	/** @var double */
+	private $x, $y, $z, $yaw, $pitch;
+
+	/** @var string[] */
+	private $players;
+
+	/** @var string */
+	private $player;
+
+	/** @var int */
+	private $maxRange;
+
+	/**
+	 * @param double $x
+	 * @param double $y
+	 * @param double $z
+	 * @param double $yaw
+	 * @param double $pitch
+	 * @param string[] $players
+	 * @param int $maxRange
+	 * @param string $player
+	 */
 	public function __construct($x, $y, $z, $yaw, $pitch, $players, $maxRange, $player){
 		$this->x = $x;
 		$this->y = $y;
@@ -32,6 +54,7 @@ class ShootTask extends AsyncTask{
 		$pcos = cos($this->pitch/180*M_PI);
 		
 		$cnt = 0;
+		$ret = [];
 		
 		while($cnt < $this->maxRange){
 			$xx = $this->x + (0.4 + $cnt) * $sin * $pcos;
