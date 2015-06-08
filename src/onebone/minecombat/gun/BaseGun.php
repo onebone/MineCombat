@@ -76,8 +76,8 @@ abstract class BaseGun{
 		
 		foreach($ret as $val){
 			$vec = new Vector3($val[0], $val[1], $val[2]);
-			
-			if($level->getBlock($vec->round())->getId() !== 0){
+
+			if($level->getBlock(new Vector3($val[4], $val[5], $val[6]))->getId() !== 0){
 				$this->shoot = false;
 				return;
 			}
