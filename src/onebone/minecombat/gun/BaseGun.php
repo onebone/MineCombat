@@ -14,8 +14,11 @@ use onebone\minecombat\task\ShootTask;
 
 abstract class BaseGun{
 	protected $player;
-	
-	private $plugin, $ammo, $maxRange, $color, $shoot = false;
+
+	/** @var MineCombat */
+	private $plugin;
+
+	private $ammo, $maxRange, $color, $shoot = false;
 	
 	public function __construct(MineCombat $plugin, Player $player, $maxRange, $ammo = 50, $color = [175, 175, 175]){
 		$this->plugin = $plugin;
@@ -123,7 +126,14 @@ abstract class BaseGun{
 	public function getMaxRange(){
 		return $this->maxRange;
 	}
-	
+
+	/**
+	 * @return MineCombat
+	 */
+	public function getPlugin(){
+		return $this->plugin;
+	}
+
 	abstract public function onShot(Player $target);
 	abstract public function getDamage($distance);
 }
