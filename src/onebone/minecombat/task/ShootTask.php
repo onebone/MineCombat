@@ -61,7 +61,7 @@ class ShootTask extends AsyncTask{
 			$yy = $this->y + (0.4 + $cnt) * $tan;
 			$zz = $this->z + (0.4 + $cnt) * $cos * $pcos;
 			
-			$ret[$cnt] = [$xx, $yy, $zz, false];
+			$ret[$cnt] = [$xx, $yy, $zz, false, round($xx), round($yy), round($zz)];
 			
 			foreach($this->players as $name => $player){
 				if($xx - 1 < $player[0] and $xx + 1 > $player[0] and $yy - 2 < $player[1] and $yy + 1 > $player[1] and $zz + 1 > $player[2]	and $zz - 1 < $player[2]){

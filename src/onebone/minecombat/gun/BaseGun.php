@@ -80,7 +80,7 @@ abstract class BaseGun{
 			$roundY = round($val[1]);
 			$roundZ = round($val[2]);
 			
-			if($level->getBlock($vec->round())->getId() !== 0){
+			if($level->getBlock(new Vector3($val[4], $val[5], $val[6]))->getId() !== 0){
 				$this->shoot = false;
 				return;
 			}
