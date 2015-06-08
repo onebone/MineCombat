@@ -1,0 +1,12 @@
+# This is config file of MineCombat
+
+# prepare-time : Set preparation time (seconds)
+prepare-time: 60
+
+# game-time : Set the time to play match (seconds)
+game-time: 900
+
+# spawn-position : Set the position of spawn position of each team.
+spawn-pos:
+ blue: []
+ red: []

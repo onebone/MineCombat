@@ -1,0 +1,28 @@
+name: MineCombat
+version: "1.0"
+author: onebone
+main: onebone\minecombat\MineCombat
+api: [1.12.0]
+
+permissions:
+ minecombat.*:
+  description: Includes all permissions of MineCombat
+  children:
+   minecombat.command.*:
+    description: Includes all permissions to use command of MineCombat
+    children:
+     minecombat.command.rank:
+      description: Allows player to use /rank
+      default: true
+      usage: /rank
+     minecombat.command.spawnpos:
+      description: Allows player to use /spawnpos
+      usage: /spawnpos <blue|red>
+
+commands:
+ rank:
+  description: Allows player to see their rank
+  permission: minecombat.command.rank
+ spawnpos:
+  description: Allows player to set spawn position of each team.
+  permission: minecombat.command.spawnpos
