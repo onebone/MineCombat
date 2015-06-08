@@ -8,7 +8,6 @@ use pocketmine\math\Vector3;
 use pocketmine\network\protocol\ExplodePacket;
 use pocketmine\network\Network;
 use pocketmine\level\particle\DustParticle;
-use pocketmine\Thread;
 
 use onebone\minecombat\MineCombat;
 use onebone\minecombat\task\ShootTask;
@@ -68,6 +67,8 @@ abstract class BaseGun{
 			
 			$this->plugin->submitAsyncTask($thr);
 		}
+
+		//FIXME: No return value
 	}
 	
 	public function processShoot($ret){
@@ -75,10 +76,6 @@ abstract class BaseGun{
 		
 		foreach($ret as $val){
 			$vec = new Vector3($val[0], $val[1], $val[2]);
-			
-			$roundX = round($val[0]);
-			$roundY = round($val[1]);
-			$roundZ = round($val[2]);
 			
 			if($level->getBlock($vec->round())->getId() !== 0){
 				$this->shoot = false;
