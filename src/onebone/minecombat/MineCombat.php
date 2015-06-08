@@ -156,7 +156,7 @@ class MineCombat extends PluginBase implements Listener{
 	}
 
 	/**
-	 * @param string $player
+	 * @param Player|string $player
 	 *
 	 * @return Pistol|null
 	 */
