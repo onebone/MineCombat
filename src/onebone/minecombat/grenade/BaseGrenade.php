@@ -12,7 +12,11 @@ use onebone\minecombat\task\UpdateTask;
 use onebone\minecombat\MineCombat;
 
 abstract class BaseGrenade{
-	private $player, $plugin;
+	/** @var Player */
+	private $player;
+
+	/** @var MineCombat */
+	private $plugin;
 	
 	private $motionX, $motionY, $motionZ, $x, $y, $z, $scheduleId = -1;
 	
@@ -49,11 +53,11 @@ abstract class BaseGrenade{
 		$this->y += $this->motionY;
 		$this->z += $this->motionZ;
 		
-		$pos = new Position($this->x, $this->y, $this->z, $this->player->getLevel());
+		$pos = new Position($this->x, $this->y, $this->z, $this->getPlayer()->getLevel());
 		$particle = new CriticalParticle(new Vector3($this->x, $this->y, $this->z));
-		$this->player->getLevel()->addParticle($particle);
+		$this->getPlayer()->getLevel()->addParticle($particle);
 		
-		$block = $this->player->getLevel()->getBlock($pos);
+		$block = $this->getPlayer()->getLevel()->getBlock($pos);
 		if($block->getId() !== 0 or $this->y <= 0){
 			$this->onCollide($pos);
 			if(Server::getInstance()->getScheduler()->isQueued($this->scheduleId)){
@@ -61,9 +65,19 @@ abstract class BaseGrenade{
 			}
 		}
 	}
-	
+
+	/**
+	 * @return Player
+	 */
 	public function getPlayer(){
 		return $this->player;
+	}
+
+	/**
+	 * @return MineCombat
+	 */
+	public function getPlugin(){
+		return $this->plugin;
 	}
 	
 	abstract public function onCollide(Position $player);
