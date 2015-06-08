@@ -22,13 +22,11 @@ use pocketmine\event\inventory\InventoryPickupItemEvent;
 use pocketmine\scheduler\AsyncTask;
 
 use onebone\minecombat\gun\Pistol;
-use onebone\minecombat\gun\ShootThread;
 use onebone\minecombat\grenade\FragmentationGrenade;
 use onebone\minecombat\task\GameStartTask;
 use onebone\minecombat\task\GameEndTask;
 use onebone\minecombat\task\TeleportTask;
 use onebone\minecombat\task\PopupTask;
-use onebone\minecombat\task\HandleThreadTask;
 
 class MineCombat extends PluginBase implements Listener{
 	const STAT_GAME_END = 0;
