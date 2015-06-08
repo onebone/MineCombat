@@ -75,8 +75,12 @@ class MineCombat extends PluginBase implements Listener{
 			if($blue < $red){
 				$this->players[$player->getName()][2] = self::TEAM_BLUE;
 				
-				$level = floor(($this->level[$player->getName()] / 10000));
-				$player->setNameTag("Lv.".$level.TextFormat::BLUE.$player->getName());
+				if(isset($this->level[$player->getName()])){
+					$level = floor(($this->level[$player->getName()] / 10000));
+					$player->setNameTag("Lv.".$level.TextFormat::BLUE.$player->getName());
+				}else{
+					$player->setNameTag(TextFormat::BLUE.$player->getName());
+				}
 				
 				$player->sendMessage("[MineCombat] You are ".TextFormat::BLUE."BLUE".TextFormat::RESET." team.");
 				if(isset($this->players[$player->getName()][0])){
@@ -87,8 +91,12 @@ class MineCombat extends PluginBase implements Listener{
 			}else{
 				$this->players[$player->getName()][2] = self::TEAM_RED;
 				
-				$level = floor(($this->level[$player->getName()] / 10000));
-				$player->setNameTag("Lv.".$level.TextFormat::RED.$player->getName());
+				if(isset($this->level[$player->getName()])){
+					$level = floor(($this->level[$player->getName()] / 10000));
+					$player->setNameTag("Lv.".$level.TextFormat::RED.$player->getName());
+				}else{
+					$player->setNameTag(TextFormat::RED.$player->getName());
+				}
 				
 				$player->sendMessage("[MineCombat] You are ".TextFormat::RED."RED".TextFormat::RESET." team.");
 				if(isset($this->players[$player->getName()][0])){
