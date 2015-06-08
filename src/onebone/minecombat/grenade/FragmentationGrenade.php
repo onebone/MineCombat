@@ -18,7 +18,7 @@ use onebone\minecombat\task\ExplosionTask;
 class FragmentationGrenade extends BaseGrenade{
 	private $plugin;
 	
-	const RANGE = 3;
+	const RANGE = 4;
 	
 	public function __construct(MineCombat $plugin, Player $player){
 		parent::__construct($plugin, $player);
@@ -31,8 +31,6 @@ class FragmentationGrenade extends BaseGrenade{
 	}
 	
 	public function explode(Position $pos){
-		$range = self::RANGE + 1;
-		
 		$aabb = new AxisAlignedBB($pos->getX() - $range, $pos->getY() - $range, $pos->getZ() - $range, $pos->getX() + $range, $pos->getY() + $range, $pos->getZ() + $range);
 		$list = $this->getPlayer()->getLevel()->getNearbyEntities($aabb, null);
 		
