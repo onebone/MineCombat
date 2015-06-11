@@ -6,6 +6,7 @@ use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
 use pocketmine\level\Position;
+use pocketmine\level\Level;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use pocketmine\item\Item;
@@ -18,6 +19,7 @@ use pocketmine\event\player\PlayerDeathEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\player\PlayerDropItemEvent;
+use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\inventory\InventoryPickupItemEvent;
 use pocketmine\scheduler\AsyncTask;
 
@@ -42,7 +44,7 @@ class MineCombat extends PluginBase implements Listener{
 	const GRENADE_ID = 341;
 	const GUN_ID = 105;
 	
-	private $rank, $team, $players, $score, $status, $spawnPos, $threads, $level;
+	private $rank, $team, $players, $score, $status, $spawnPos = null, $nextLevel = null, $threads, $level, $killDeath;
 	
 	private static $obj;
 
@@ -59,6 +61,21 @@ class MineCombat extends PluginBase implements Listener{
 		$this->getServer()->getScheduler()->scheduleDelayedTask(new GameStartTask($this), $this->getConfig()->get("prepare-time") * 20);
 		
 		$this->getServer()->broadcastMessage(TextFormat::AQUA."[MineCombat] Preparation time is started.");
+		
+		$pos = $this->getConfig()->get("spawn-pos");
+		
+		if($pos === []) return;
+		$randKey = array_rand($pos);
+		
+		$randPos = $pos[$randKey];
+		
+		if(($level = $this->getServer()->getLevelByName($randPos["blue"][3])) instanceof Level){
+			$this->spawnPos = [new Position($randPos["red"][0], $randPos["red"][1], $randPos["red"][2], $level), new Position($randPos["blue"][0], $randPos["blue"][1], $randPos["blue"][2], $level)];
+			$this->nextLevel = $randKey;
+		}else{
+			$this->getLogger()->critical("Invalid level name was given.");
+			$this->getServer()->shutdown();
+		}
 	}
 	
 	public function startGame(){
@@ -188,22 +205,15 @@ class MineCombat extends PluginBase implements Listener{
 	}
 	
 	public function teleportToSpawn(Player $player){
-		if($this->status !== self::STAT_GAME_IN_PROGRESS) return;
-		
+		if($this->spawnPos === null) return;
 		$team = $this->players[$player->getName()][2];
 		switch($team){
 			case self::TEAM_BLUE:
-			$cfg = $this->getConfig()->get("spawn-pos")["blue"];
-			$pos = new Position($cfg[0], $cfg[1], $cfg[2], $this->getServer()->getLevelByName($cfg[3]));
-			$player->teleport($pos);
+			$player->teleport($this->spawnPos[1]);
 			break;
-			case self::TEAM_RED:
-			$cfg = $this->getConfig()->get("spawn-pos")["red"];
-			$pos = new Position($cfg[0], $cfg[1], $cfg[2], $this->getServer()->getLevelByName($cfg[3]));
-			$player->teleport($pos);
+			default: // RED team or not decided
+			$player->teleport($this->spawnPos[0]);
 			break;
-			default:
-			$this->getLogger()->error("Unknown team was given.");
 		}
 	}
 	
@@ -215,10 +225,8 @@ class MineCombat extends PluginBase implements Listener{
 				if(!isset($this->players[$player->getName()])) continue;
 				$msg = "";
 				if($this->players[$player->getName()][2] === self::TEAM_RED){
-					//$player->sendPopup(TextFormat::RED."RED TEAM\n".TextFormat::WHITE."Scores: ".TextFormat::RED.($this->score[self::TEAM_RED]).TextFormat::WHITE." / ".TextFormat::BLUE.($this->score[self::TEAM_BLUE]));
 					$popup = TextFormat::RED."RED TEAM\n".TextFormat::WHITE."Scores: ".TextFormat::RED.($this->score[self::TEAM_RED]).TextFormat::WHITE." / ".TextFormat::BLUE.($this->score[self::TEAM_BLUE].TextFormat::WHITE." / xp : ".TextFormat::YELLOW.$this->level[$player->getName()]);
 				}else{
-				//	$player->sendPopup(TextFormat::BLUE."BLUE TEAM\n".TextFormat::WHITE."Scores: ".TextFormat::BLUE.$this->score[self::TEAM_BLUE].TextFormat::WHITE." / ".TextFormat::RED.$this->score[self::TEAM_RED]);
 					$popup = (TextFormat::BLUE."BLUE TEAM\n".TextFormat::WHITE."Scores: ".TextFormat::BLUE.$this->score[self::TEAM_BLUE].TextFormat::WHITE." / ".TextFormat::RED.$this->score[self::TEAM_RED].TextFormat::WHITE." / xp : ".TextFormat::YELLOW.$this->level[$player->getName()]);
 				}
 				$ammo = "";
@@ -233,7 +241,11 @@ class MineCombat extends PluginBase implements Listener{
 			}
 		}else{
 			foreach($this->getServer()->getOnlinePlayers() as $player){
-				$player->sendPopup(TextFormat::GREEN."Preparation in progress");
+				$levelStr = "";
+				if($this->nextLevel !== null){
+					$levelStr = "\nNext map: ".TextFormat::AQUA.$this->nextLevel;
+				}
+				$player->sendPopup(TextFormat::GREEN."Preparation in progress".$levelStr);
 			}
 		}
 	}
@@ -258,12 +270,23 @@ class MineCombat extends PluginBase implements Listener{
 		}
 		$this->level = unserialize(file_get_contents($this->getDataFolder()."level.dat"));
 		
+		if(!is_file($this->getDataFolder()."kill_death.dat")){
+			file_put_contents($this->getDataFolder()."kill_death.dat", serialize([]));
+		}
+		$this->killDeath = unserialize(file_get_contents($this->getDataFolder()."kill_death.dat"));
+		
 		$this->players = [];
 		
 		$this->saveDefaultConfig();
 		
 		$spawnPos = $this->getConfig()->get("spawn-pos");
-		if($spawnPos["blue"] !== [] and $spawnPos["red"] !== []){
+		
+		foreach($spawnPos as $key => $data){
+			if(!isset($data["blue"]) or !isset($data["red"])){
+				unset($spawnPos[$key]);
+			}
+		}
+		if($spawnPos !== [] and $spawnPos !== null){ // TODO: Fix here
 			$this->prepareGame();
 		}else{
 			$this->getLogger()->warning("Set the spawn position of each team by /spawnpos and restart server to start the match.");
@@ -277,6 +300,7 @@ class MineCombat extends PluginBase implements Listener{
 	public function onDisable(){
 		file_put_contents($this->getDataFolder()."rank.dat", serialize($this->rank));
 		file_put_contents($this->getDataFolder()."level.dat", serialize($this->level));
+		file_put_contents($this->getDataFolder()."kill_death.dat", serialize($this->killDeath));
 	}
 	
 	public function onCommand(CommandSender $sender, Command $command, $label, array $params){
@@ -286,32 +310,85 @@ class MineCombat extends PluginBase implements Listener{
 
 		switch($command->getName()){
 			case "rank":
+			$data = $this->killDeath[0];
 			
+			arsort($data);
+			
+			$cnt = 0;
+			$send = "Your status : ".TextFormat::YELLOW.$this->killDeath[0][$sender->getName()].TextFormat::WHITE."kills/".TextFormat::YELLOW.$this->killDeath[1][$sender->getName()].TextFormat::WHITE."deaths\n--------------------\n";
+			foreach($data as $player => $datam){
+				$send .= TextFormat::GREEN.$player.TextFormat::WHITE." ".TextFormat::YELLOW.$datam.TextFormat::WHITE."kills/".TextFormat::YELLOW.$this->killDeath[1][$player].TextFormat::WHITE."deaths\n";
+				if($cnt >= 5){
+					break;
+				}
+				++$cnt;
+			}
+			$sender->sendMessage($send);
 			return true;
 			case "spawnpos":
 			$sub = strtolower(array_shift($params));
 			switch($sub){
 				case "blue":
 				case "b":
+				$name = array_shift($params);
+				if(trim($name) === ""){
+					$sender->sendMessage(TextFormat::RED."Usage: /spawnpos blue <name>");
+					return true;
+				}
+				
 				$config = $this->getConfig()->get("spawn-pos");
+				if(isset($config[$name]["blue"])){
+					$sender->sendMessage(TextFormat::RED."$name already exists.");
+					return;
+				}
 				$loc = [
 					$sender->getX(), $sender->getY(), $sender->getZ(), $sender->getLevel()->getFolderName()
 				];
-				$config["blue"] = $loc;
+				$config[$name]["blue"] = $loc;
 				$this->getConfig()->set("spawn-pos", $config);
 				$this->getConfig()->save();
 				$sender->sendMessage("[MineCombat] Spawn position of BLUE team set.");
 				return true;
 				case "r":
 				case "red":
+				
+				$name = array_shift($params);
+				if(trim($name) === ""){
+					$sender->sendMessage(TextFormat::RED."Usage: /spawnpos red <name>");
+					return true;
+				}
+				
 				$config = $this->getConfig()->get("spawn-pos");
+				if(isset($config[$name]["red"])){
+					$sender->sendMessage(TextFormat::RED."$name already exists.");
+					return;
+				}
+				
 				$loc = [
 					$sender->getX(), $sender->getY(), $sender->getZ(), $sender->getLevel()->getFolderName()
 				];
-				$config["red"] = $loc;
+				$config[$name]["red"] = $loc;
 				$this->getConfig()->set("spawn-pos", $config);
 				$this->getConfig()->save();
 				$sender->sendMessage("[MineCombat] Spawn position of RED team set.");
+				return true;
+				case "remove":
+				$name = array_shift($params);
+				if(trim($name) === ""){
+					$sender->sendMessage(TextFormat::RED."Usage: /spawnpos blue <name>");
+					return true;
+				}
+				
+				$config = $this->getConfig()->get("spawn-pos");
+				$config[$name] = null;
+				unset($config[$name]);
+				
+				$this->getConfig()->set("spawn-pos", $config);
+				$this->getConfig()->save();
+				return true;
+				case "list":
+				$list = implode(", ", array_keys($this->getConfig()->get("spawn-pos")));
+				$sender->sendMessage("Positions list: \n".$list);
 				return true;
 				default:
 				$sender->sendMessage("Usage: ".$command->getUsage());
@@ -339,11 +416,15 @@ class MineCombat extends PluginBase implements Listener{
 		}
 	}
 	
-	public function onJoinEvent(PlayerJoinEvent $event){
+	public function onLoginEvent(PlayerLoginEvent $event){
 		$player = $event->getPlayer();
 		
 		if(!isset($this->level[$player->getName()])){
 			$this->level[$player->getName()] = 0;
+		}
+		if(!isset($this->killDeath[$player->getName()])){
+			$this->killDeath[0][$player->getName()] = 0;
+			$this->killDeath[1][$player->getName()] = 0;
 		}
 		
 		$this->players[$player->getName()] = [
@@ -352,6 +433,11 @@ class MineCombat extends PluginBase implements Listener{
 			-1,
 			time()
 		];
+	}
+	
+	public function onJoinEvent(PlayerJoinEvent $event){
+		$player = $event->getPlayer();
+		
 		if(!$player->getInventory()->contains(Item::get(self::GUN_ID))){
 			$player->getInventory()->addItem(Item::get(self::GUN_ID));
 		}
@@ -422,6 +508,9 @@ class MineCombat extends PluginBase implements Listener{
 					}
 					$this->broadcastPopup($firstKill.$damagerColor.$damager->getName().TextFormat::WHITE." -> ".$playerColor.$player->getName());
 					
+					++$this->killDeath[0][$damager->getName()];
+					++$this->killDeath[1][$player->getName()];
+					
 					$this->level[$damager->getName()] += ($damager->getHealth() * 5);
 					$level = floor(($this->level[$damager->getName()] / 10000));
 					$damager->setNameTag("Lv.".$level.$damagerColor.$damager->getName());
@@ -443,6 +532,9 @@ class MineCombat extends PluginBase implements Listener{
 						$firstKill = TextFormat::YELLOW."FIRST BLOOD\n".TextFormat::WHITE;
 					}
 					$this->broadcastPopup($firstKill.$damagerColor.$damager->getName().TextFormat::WHITE." -O-> ".$playerColor.$player->getName());
+					
+					++$this->killDeath[0][$damager->getName()];
+					++$this->killDeath[1][$player->getName()];
 					
 					$this->level[$damager->getName()] += ($damager->getHealth() * 5);
 					$level = floor(($this->level[$damager->getName()] / 10000));
@@ -517,14 +609,14 @@ class MineCombat extends PluginBase implements Listener{
 		$player = $event->getInventory()->getHolder();
 		
 		if($player instanceof Player){
-			if($this->status === self::STAT_GAME_IN_PROGRESS){
-				if($event->getItem()->getItem()->getId() === self::GUN_ID){
-					$this->players[$player->getName()][0]->addAmmo(30);
-					if($player->getInventory()->contains(Item::get(self::GUN_ID))){
-						$event->getItem()->kill();
-						$event->setCancelled();
-					}
+			if($event->getItem()->getItem()->getId() === self::GUN_ID){
+				$this->players[$player->getName()][0]->addAmmo(30);
+				if($player->getInventory()->contains(Item::get(self::GUN_ID))){
+					$event->getItem()->kill();
+					$event->setCancelled();
 				}
+			}else{
+				$event->getItem()->kill();
 			}
 		}
 	}
