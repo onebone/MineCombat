@@ -415,6 +415,11 @@ class MineCombat extends PluginBase implements Listener{
 				return true;
 			}
 			
+			if($this->status === self::STAT_GAME_IN_PROGRESS){
+				$sender->sendMessage(TextFormat::RED."Game is already in progress. Select map after the game is ended.");
+				return true;
+			}
+			
 			$pos = $this->getConfig()->get("spawn-pos");
 			if(!isset($pos[$name])){
 				$sender->sendMessage("Map ".TextFormat::RED.$name.TextFormat::WHITE." exist!");
