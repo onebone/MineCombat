@@ -18,11 +18,20 @@ permissions:
      minecombat.command.spawnpos:
       description: Allows player to use /spawnpos
       usage: /spawnpos <blue|red>
+     minecombat.command.momap:
+      description: Allows player to use /momap
+      usage: /momap <name>
 
 commands:
  rank:
+  usage: /rank
   description: Allows player to see their rank
   permission: minecombat.command.rank
  spawnpos:
+  usage: /spawnpos <blue|red|list>
   description: Allows player to set spawn position of each team.
   permission: minecombat.command.spawnpos
+ momap:
+  usage: /momap <name>
+  description: Allows player to modify map by hand
+  permission: minecombat.command.momap

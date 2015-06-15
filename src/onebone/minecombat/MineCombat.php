@@ -125,6 +125,9 @@ class MineCombat extends PluginBase implements Listener{
 				
 				++$red;
 			}
+			$this->killDeath[0][$player->getName()] = 0;
+			$this->killDeath[1][$player->getName()] = 1;
+			
 			$this->teleportToSpawn($player);
 			$player->setHealth(20);
 			
@@ -304,12 +307,13 @@ class MineCombat extends PluginBase implements Listener{
 	}
 	
 	public function onCommand(CommandSender $sender, Command $command, $label, array $params){
-		if(!($sender instanceof Player)){
-			return true;
-		}
-
 		switch($command->getName()){
 			case "rank":
+			if(!$sender instanceof Player){
+				$sender->sendMessage(TextFormat::RED."Please run this command in-game.");
+				return true;
+			}
+			
 			$data = $this->killDeath[0];
 			
 			arsort($data);
@@ -330,6 +334,11 @@ class MineCombat extends PluginBase implements Listener{
 			switch($sub){
 				case "blue":
 				case "b":
+				if(!$sender instanceof Player){
+					$sender->sendMessage(TextFormat::RED."Please run this command in-game.");
+					return true;
+				}
+				
 				$name = array_shift($params);
 				if(trim($name) === ""){
 					$sender->sendMessage(TextFormat::RED."Usage: /spawnpos blue <name>");
@@ -351,6 +360,10 @@ class MineCombat extends PluginBase implements Listener{
 				return true;
 				case "r":
 				case "red":
+				if(!$sender instanceof Player){
+					$sender->sendMessage(TextFormat::RED."Please run this command in-game.");
+					return true;
+				}
 				
 				$name = array_shift($params);
 				if(trim($name) === ""){
@@ -394,6 +407,30 @@ class MineCombat extends PluginBase implements Listener{
 				$sender->sendMessage("Usage: ".$command->getUsage());
 			}
 			return true;
+			case "momap":
+			$name = array_shift($params);
+			
+			if(trim($name) === ""){
+				$sender->sendMessage(TextFormat::RED."Usage: ".$command->getUsage());
+				return true;
+			}
+			
+			$pos = $this->getConfig()->get("spawn-pos");
+			if(!isset($pos[$name])){
+				$sender->sendMessage("Map ".TextFormat::RED.$name.TextFormat::WHITE." exist!");
+				return true;
+			}else{
+				$selectedPos = $pos[$name];
+				if(($level = $this->getServer()->getLevelByName($selectedPos["blue"][3])) instanceof Level){
+					$this->spawnPos = [new Position($selectedPos["red"][0], $selectedPos["red"][1], $selectedPos["red"][2], $level), new Position($selectedPos["blue"][0], $selectedPos["blue"][1], $selectedPos["blue"][2], $level)];
+					$this->nextLevel = $name;
+					$sender->sendMessage("Map was selected to ".TextFormat::AQUA.$name);
+				}else{
+					$this->getLogger()->critical("Invalid level name was given.");
+					$this->getServer()->shutdown();
+				}
+			}
+			return true;
 		}
 
 		return true;
@@ -422,7 +459,7 @@ class MineCombat extends PluginBase implements Listener{
 		if(!isset($this->level[$player->getName()])){
 			$this->level[$player->getName()] = 0;
 		}
-		if(!isset($this->killDeath[$player->getName()])){
+		if(!isset($this->killDeath[0][$player->getName()])){
 			$this->killDeath[0][$player->getName()] = 0;
 			$this->killDeath[1][$player->getName()] = 0;
 		}
@@ -476,7 +513,7 @@ class MineCombat extends PluginBase implements Listener{
 	public function onQuitEvent(PlayerQuitEvent $event){
 		$player = $event->getPlayer();
 		
-		if(isset($this->players[$player->getName()])){
+		if($player->loggedIn and isset($this->players[$player->getName()])){
 			unset($this->players[$player->getName()]);
 		}
 	}
@@ -484,7 +521,14 @@ class MineCombat extends PluginBase implements Listener{
 	public function onDeath(PlayerDeathEvent $event){
 		$player = $event->getEntity();
 		
-		if($this->status === self::STAT_GAME_IN_PROGRESS){			
+		if($this->status === self::STAT_GAME_IN_PROGRESS){
+			$items = $event->getDrops();
+			foreach($items as $key => $item){
+				if($item->getId() !== self::GUN_ID){
+					unset($items[$key]);
+				}
+			}
+			$event->setDrops($items);
 			$cause = $player->getLastDamageCause();
 			if(!($cause instanceof EntityDamageByEntityEvent)){
 				return;
@@ -543,14 +587,6 @@ class MineCombat extends PluginBase implements Listener{
 			}
 			$event->setDeathMessage("");
 		}
-		
-		$items = $event->getDrops();
-		foreach($items as $key => $item){
-			if($item->getId() !== self::GUN_ID){
-				unset($items[$key]);
-			}
-		}
-		$event->setDrops($items);
 	}
 	
 	public function onRespawn(PlayerRespawnEvent $event){
