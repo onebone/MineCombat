@@ -19,6 +19,8 @@
 
 namespace onebone\minecombat;
 
+use onebone\minecombat\grenade\BaseGrenade;
+use onebone\minecombat\gun\BaseGun;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
@@ -58,10 +60,10 @@ class MineCombat extends PluginBase implements Listener{
 	const TEAM_RED = 0;
 	const TEAM_BLUE = 1;
 	
-	const GRENADE_ID = 341;
-	const GUN_ID = 105;
-	
-	private $rank, $team, $players, $score, $status, $spawnPos = null, $nextLevel = null, $threads, $level, $killDeath;
+	const GRENADE_ID = Item::SLIMEBALL;
+	const GUN_ID = Item::MELON_STEM;
+
+	private $rank, $players, $score, $status, $spawnPos = null, $nextLevel = null, $level, $killDeath;
 	
 	private static $obj;
 
@@ -156,7 +158,7 @@ class MineCombat extends PluginBase implements Listener{
 				$player->getInventory()->addItem(Item::get(self::GUN_ID));
 			}
 			if(isset($this->players[$player->getName()][0])){
-				$this->players[$player->getName()][0]->setAmmo(50);
+				$this->players[$player->getName()][0]->setAmmo($this->players[$player->getName()][0]->getDefaultAmmo());
 			}
 			$this->players[$player->getName()][3] = time();
 		}
@@ -195,7 +197,7 @@ class MineCombat extends PluginBase implements Listener{
 	/**
 	 * @param Player|string $player
 	 *
-	 * @return Pistol|null
+	 * @return BaseGun|null
 	 */
 	public function getGunByPlayer($player){
 		if($player instanceof Player){
@@ -239,24 +241,24 @@ class MineCombat extends PluginBase implements Listener{
 	
 	public function showPopup(){
 		if($this->status === self::STAT_GAME_IN_PROGRESS){
-			$now = time();
 
 			foreach($this->getServer()->getOnlinePlayers() as $player){
 				if(!isset($this->players[$player->getName()])) continue;
-				$msg = "";
 				if($this->players[$player->getName()][2] === self::TEAM_RED){
 					$popup = TextFormat::RED."RED TEAM\n".TextFormat::WHITE."Scores: ".TextFormat::RED.($this->score[self::TEAM_RED]).TextFormat::WHITE." / ".TextFormat::BLUE.($this->score[self::TEAM_BLUE].TextFormat::WHITE." / xp : ".TextFormat::YELLOW.$this->level[$player->getName()]);
 				}else{
 					$popup = (TextFormat::BLUE."BLUE TEAM\n".TextFormat::WHITE."Scores: ".TextFormat::BLUE.$this->score[self::TEAM_BLUE].TextFormat::WHITE." / ".TextFormat::RED.$this->score[self::TEAM_RED].TextFormat::WHITE." / xp : ".TextFormat::YELLOW.$this->level[$player->getName()]);
 				}
 				$ammo = "";
+				$gun = "";
 				if(isset($this->players[$player->getName()][0])){
 					$ammo = $this->players[$player->getName()][0]->getLeftAmmo();
 					if($ammo <= 0){
 						$ammo = TextFormat::RED.$ammo;
 					}
+					$gun = $this->getClassColor($this->players[$player->getName()][0]->getClass()).$this->players[$player->getName()][0]->getName();
 				}
-				$popup .= TextFormat::WHITE."\nAmmo: ".$ammo;
+				$popup .= "\nWeapon : ".$gun.", Ammo: ".$ammo;
 				$player->sendPopup($popup);
 			}
 		}else{
@@ -268,6 +270,18 @@ class MineCombat extends PluginBase implements Listener{
 				$player->sendPopup(TextFormat::GREEN."Preparation in progress".$levelStr);
 			}
 		}
+	}
+
+	public static function getClassColor($class){
+		switch($class){
+			case "A": $color = TextFormat::BLUE;break;
+			case "B": $color = TextFormat::AQUA;break;
+			case "C": $color = TextFormat::GREEN;break;
+			case "D": $color = TextFormat::GOLD;break;
+			case "E": $color = TextFormat::RED;break;
+			default: $color = TextFormat::GRAY;break;
+		}
+		return $color;
 	}
 	
 	public function submitAsyncTask(AsyncTask $task){
@@ -365,7 +379,7 @@ class MineCombat extends PluginBase implements Listener{
 				$config = $this->getConfig()->get("spawn-pos");
 				if(isset($config[$name]["blue"])){
 					$sender->sendMessage(TextFormat::RED."$name already exists.");
-					return;
+					return true;
 				}
 				$loc = [
 					$sender->getX(), $sender->getY(), $sender->getZ(), $sender->getLevel()->getFolderName()
@@ -391,7 +405,7 @@ class MineCombat extends PluginBase implements Listener{
 				$config = $this->getConfig()->get("spawn-pos");
 				if(isset($config[$name]["red"])){
 					$sender->sendMessage(TextFormat::RED."$name already exists.");
-					return;
+					return true;
 				}
 				
 				$loc = [
@@ -487,7 +501,7 @@ class MineCombat extends PluginBase implements Listener{
 		}
 		
 		$this->players[$player->getName()] = [
-			new Pistol($this, $player, 50),
+			new Pistol($this, $player, array(175, 175, 175)),
 			new FragmentationGrenade($this, $player),
 			-1,
 			time()
@@ -626,7 +640,7 @@ class MineCombat extends PluginBase implements Listener{
 		
 		$this->players[$player->getName()][3] = time();
 		if(isset($this->players[$player->getName()][0])){
-			$this->players[$player->getName()][0]->setAmmo(50);
+			$this->players[$player->getName()][0]->setAmmo($this->players[$player->getName()][0]->getDefaultAmmo());
 		}
 	}
 	
@@ -677,5 +691,39 @@ class MineCombat extends PluginBase implements Listener{
 				$event->getItem()->kill();
 			}
 		}
+	}
+
+	public function giveGun($player, BaseGun $gun){
+		switch($this->players[$player][2]){
+			case self::TEAM_RED: $color = [247, 2, 9]; break;
+			case self::TEAM_BLUE: $color = [40, 45, 208]; break;
+				break;
+			default: return false;
+		}
+
+		$gun->setColor($color);
+		$this->players[$player][0] = $gun;
+		return true;
+	}
+
+	public function giveGrenade($playerName, BaseGrenade $grenade){
+		$this->players[$playerName][1] = $grenade;
+	}
+
+	public function decreaseXP($playerName, $amount){
+		if($this->level[$playerName] >= $amount) {
+			$this->level[$playerName] -= $amount;
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	public function getTeam($playerName){
+		return $this->players[$playerName][2];
+	}
+
+	public function getStatus(){
+		return $this->status;
 	}
 }

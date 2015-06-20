@@ -58,8 +58,6 @@ abstract class BaseGrenade{
 		$this->y = $this->player->getY() + 1;
 		$this->z = $this->player->getZ();
 		
-		$gravity = $this->getGravity();
-		
 		$this->scheduleId = Server::getInstance()->getScheduler()->scheduleRepeatingTask(new UpdateTask($this->plugin, $this), 1)->getTaskId();
 	}
 	
@@ -95,6 +93,19 @@ abstract class BaseGrenade{
 	 */
 	public function getPlugin(){
 		return $this->plugin;
+	}
+
+	public static function getName(){
+		return "UNKNOWN GUN";
+	}
+
+	//returns class (A ~ E)
+	public static function getClass(){
+		return "?";
+	}
+
+	public static function getInstance(MineCombat $plugin, Player $player){
+		return null;
 	}
 	
 	abstract public function onCollide(Position $player);

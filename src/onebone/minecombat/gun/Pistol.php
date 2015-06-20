@@ -19,20 +19,31 @@
 
 namespace onebone\minecombat\gun;
 
+use pocketmine\math\Vector3;
+use pocketmine\network\Network;
+use pocketmine\network\protocol\ExplodePacket;
 use pocketmine\Player;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 
 use onebone\minecombat\MineCombat;
+use pocketmine\Server;
 
 class Pistol extends BaseGun{
 	private $lastShoot;
 	
 	public function __construct(MineCombat $plugin, Player $player, $color = [175, 175, 175]){
-		parent::__construct($plugin, $player, 30, $color);
+		parent::__construct($plugin, $player, 30, 50, $color);
 	}
 	
 	public function onShoot(){
 		$this->lastShoot = microtime(true);
+		$pk = new ExplodePacket();
+		$pk->x = $this->player->getX();
+		$pk->y = $this->player->getY();
+		$pk->z = $this->player->getZ();
+		$pk->radius = 10;
+		$pk->records = [new Vector3($this->player->getX(), $this->player->getY() + 1.62, $this->player->getZ())];
+		Server::broadcastPacket($this->getPlayer()->getLevel()->getChunkPlayers($this->player->getX() >> 4, $this->player->getZ() >> 4), $pk->setChannel(Network::CHANNEL_BLOCKS));
 	}
 	
 	public function canShoot(){
@@ -52,4 +63,17 @@ class Pistol extends BaseGun{
 	public function getDamage($distance){
 		return 5; // TODO: Damage by distance
 	}
+
+	public static function getName(){
+		return "Desert Eagle";
+	}
+
+	public static function getClass(){
+		return "D";
+	}
+
+	public static function getInstance(MineCombat $plugin, Player $player, $color){
+		return new self($plugin, $player, $color);
+	}
+
 }
