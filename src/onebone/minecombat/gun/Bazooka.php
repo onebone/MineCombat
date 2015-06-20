@@ -19,8 +19,6 @@
 
 namespace onebone\minecombat\gun;
 
-use onebone\minecombat\task\BazookaShootTask;
-use pocketmine\level\particle\DustParticle;
 use pocketmine\level\particle\SmokeParticle;
 use pocketmine\level\Position;
 use pocketmine\math\AxisAlignedBB;
@@ -51,10 +49,8 @@ class Bazooka extends BaseGun{
 		$pk->radius = 10;
 		$pk->records = [new Vector3($this->player->getX(), $this->player->getY() + 1.62, $this->player->getZ())];
 		Server::broadcastPacket($this->getPlayer()->getLevel()->getChunkPlayers($this->player->getX() >> 4, $this->player->getZ() >> 4), $pk->setChannel(Network::CHANNEL_BLOCKS));
-		$vec = $this->player->getDirectionVector()->multiply(3);
-		$this->player->motionX -= $vec->getX();
-		$this->player->motionY -= $vec->getY();
-		$this->player->motionZ -= $vec->getZ();
+		$vec = $this->player->getDirectionVector()->multiply(0.9);
+		$this->player->setMotion(new Vector3(- $vec->getX(), - $vec->getY(), - $vec->getZ()));
 	}
 
 	public function canShoot(){
@@ -142,7 +138,7 @@ class Bazooka extends BaseGun{
 			$collidingEntities = $position->getLevel()->getCollidingEntities($aabb);
 
 			foreach($collidingEntities as $entity){
-				if($entity instanceof Player && $this->getPlugin()->isEnemy($this->player, $entity)) {
+				if($entity instanceof Player && $this->getPlugin()->isEnemy($this->player->getName(), $entity->getName())) {
 					$return["final"] = $currentPos;
 					$this->processBazookaShoot($return);
 					return;
