@@ -72,7 +72,7 @@ class Pistol extends BaseGun{
 		return 30;
 	}
 	
-	public function getGunItem(){
+	public static function getGunItem(){
 		return "105:0";
 	}
 
