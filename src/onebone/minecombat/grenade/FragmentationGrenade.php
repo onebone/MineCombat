@@ -19,8 +19,8 @@
 
 namespace onebone\minecombat\grenade;
 
+use pocketmine\level\particle\CriticalParticle;
 use pocketmine\Player;
-use pocketmine\level\Explosion;
 use pocketmine\level\Position;
 use pocketmine\math\Vector3;
 use pocketmine\Server;
@@ -56,12 +56,34 @@ class FragmentationGrenade extends BaseGrenade{
 		Server::broadcastPacket($this->getPlayer()->getLevel()->getChunkPlayers($pos->x >> 4, $pos->z >> 4), $pk->setChannel(Network::CHANNEL_BLOCKS));
 		
 		foreach($nearbyEntities as $entity){
-			$event = new EntityDamageByEntityEvent($this->getPlayer(), $entity, 16, 15);
-			$entity->attack($event->getFinalDamage(), $event);
+			if(!($entity instanceof Player)){
+				continue;
+			}
+
+			if($this->getPlugin()->isEnemy($this->getPlayer()->getName(), $entity->getName())) {
+				$event = new EntityDamageByEntityEvent($this->getPlayer(), $entity, 16, 15);
+				$entity->attack($event->getFinalDamage(), $event);
+			}
+		}
+
+		for($i = 0; $i < 100; $i++){
+			$this->getPlayer()->getLevel()->addParticle(new CriticalParticle(new Vector3($pos->x + mt_rand(-self::RANGE, self::RANGE), $pos->y + mt_rand(-self::RANGE, self::RANGE), $pos->z + mt_rand(-self::RANGE, self::RANGE))));
 		}
 	}
 	
 	public function getGravity(){
 		return 0.14;
+	}
+
+	public static function getClass(){
+		return "D";
+	}
+
+	public static function getName(){
+		return "Fragmentation Grenade";
+	}
+
+	public static function getInstance(MineCombat $plugin, Player $player){
+		return new self($plugin, $player);
 	}
 }

@@ -22,8 +22,6 @@ namespace onebone\minecombat\gun;
 use pocketmine\Player;
 use pocketmine\Server;
 use pocketmine\math\Vector3;
-use pocketmine\network\protocol\ExplodePacket;
-use pocketmine\network\Network;
 use pocketmine\level\particle\DustParticle;
 
 use onebone\minecombat\MineCombat;
@@ -35,20 +33,27 @@ abstract class BaseGun{
 	/** @var MineCombat */
 	private $plugin;
 
-	private $ammo, $maxRange, $color, $shoot = false;
+	private $ammo, $maxRange, $shoot = false;
+	public $color;
+	private static $defaultAmmo = 0;
 	
 	public function __construct(MineCombat $plugin, Player $player, $maxRange, $ammo = 50, $color = [175, 175, 175]){
 		$this->plugin = $plugin;
 		$this->player = $player;
 		$this->ammo = $ammo;
 		$this->color = $color;
+		self::$defaultAmmo = $ammo;
 		
 		if($maxRange < 0){
 			throw new \Exception("Max range of gun cannot be smaller than 0");
 		}
 		$this->maxRange = $maxRange;
 	}
-	
+
+	public static function getInstance(MineCombat $plugin, Player $player, $color){
+		return null;
+	}
+
 	public function setColor($color){
 		$this->color = $color;
 	}
@@ -75,20 +80,12 @@ abstract class BaseGun{
 				$players[$player->getName()] = [$player->getX(), $player->getY() + 1.62, $player->getZ()];
 			}
 			
-			$pk = new ExplodePacket();
-			$pk->x = $this->player->getX();
-			$pk->y = $this->player->getY();
-			$pk->z = $this->player->getZ();
-			$pk->radius = 10;
-			$pk->records = [new Vector3($this->player->getX(), $this->player->getY() + 1.62, $this->player->getZ())];
-			Server::broadcastPacket($this->getPlayer()->getLevel()->getChunkPlayers($this->player->getX() >> 4, $this->player->getZ() >> 4), $pk->setChannel(Network::CHANNEL_BLOCKS));
-			
 			$thr = new ShootTask($this->player->getX(), $this->player->getY() + 1.62, $this->player->getZ(), $this->player->yaw, $this->player->pitch, $players, $this->getMaxRange(), $this->player->getName());
 			
 			$this->plugin->submitAsyncTask($thr);
 		}
 
-		//FIXME: No return value
+		return true;
 	}
 	
 	public function processShoot($ret){
@@ -101,8 +98,7 @@ abstract class BaseGun{
 				$this->shoot = false;
 				return;
 			}
-			$particle = new DustParticle($vec, $this->color[0], $this->color[1], $this->color[2]);
-			$level->addParticle($particle);
+			$level->addParticle($this->getParticle($vec, $this->color[0], $this->color[1], $this->color[2]));
 			
 			if($val[3] !== false){
 				$player = Server::getInstance()->getPlayerExact($val[3]);
@@ -115,7 +111,11 @@ abstract class BaseGun{
 		}
 		$this->shoot = false;
 	}
-	
+
+	public function getParticle(Vector3 $position, $r, $g, $b){
+		return new DustParticle($position, $r, $g, $b);
+	}
+
 	public function canShoot(){
 		return true;
 	}
@@ -149,6 +149,27 @@ abstract class BaseGun{
 	 */
 	public function getPlugin(){
 		return $this->plugin;
+	}
+
+	public static function getName(){
+		return "UNKNOWN GUN";
+	}
+
+	//returns class (A ~ E)
+	public static function getClass(){
+		return "?";
+	}
+
+	public static function getDefaultAmmo(){
+		return self::$defaultAmmo;
+	}
+
+	public function getShoot(){
+		return $this->shoot;
+	}
+
+	public function setShoot($isShooting){
+		$this->shoot = $isShooting;
 	}
 
 	abstract public function onShot(Player $target);
