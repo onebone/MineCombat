@@ -873,4 +873,8 @@ class MineCombat extends PluginBase implements Listener{
 	public function getStatus(){
 		return $this->status;
 	}
+	
+	public function getLoadedGuns(){
+		return $this->loadedGuns;
+	}
 }
