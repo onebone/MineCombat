@@ -60,6 +60,10 @@ class Pistol extends BaseGun{
 		}
 	}
 	
+	public function canGive(Player $player){
+		return true;
+	}
+	
 	public function getDamage($distance){
 		return 5; // TODO: Damage by distance
 	}

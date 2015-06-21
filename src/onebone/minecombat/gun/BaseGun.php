@@ -176,4 +176,7 @@ abstract class BaseGun{
 	abstract public function onShot(Player $target);
 	abstract public function getDamage($distance);
 	abstract public function getMagazineAmmo();
+	
+	/** @return bool */
+	abstract public function canGive(Player $player);
 }
