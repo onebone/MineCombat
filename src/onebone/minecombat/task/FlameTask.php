@@ -23,19 +23,8 @@ class FlameTask extends PluginTask{
 	}
 
 	public function onRun($currentTick){
-		if(($this->currentDuration > $this->duration) || (!$this->player->isAlive()) || ($this->getOwner()->getStatus() !== MineCombat::STAT_GAME_IN_PROGRESS)){
+		if(($this->currentDuration > $this->duration) || ($this->getOwner()->getStatus() !== MineCombat::STAT_GAME_IN_PROGRESS)){
 			$this->getHandler()->cancel();
-
-			$flags = (int) $this->target->getDataProperty(Player::DATA_FLAGS);
-			$dataProperty = [Player::DATA_FLAGS => [Player::DATA_TYPE_BYTE, $flags]];
-
-			$pk = new SetEntityDataPacket();
-			$pk->eid = $this->target->getId();
-			$pk->metadata = $dataProperty;
-
-			Server::broadcastPacket($this->target->getLevel()->getPlayers(), $pk->setChannel(Network::CHANNEL_WORLD_EVENTS));
-
-			unset(FlameThrower::$tasks[$this->target->getName()]);
 		}
 
 		if($currentTick % 100 === 0){
@@ -43,5 +32,18 @@ class FlameTask extends PluginTask{
 			$this->currentDuration++;
 		}
 
+	}
+
+	public function onCancel(){
+		$flags = (int) $this->target->getDataProperty(Player::DATA_FLAGS);
+		$dataProperty = [Player::DATA_FLAGS => [Player::DATA_TYPE_BYTE, $flags]];
+
+		$pk = new SetEntityDataPacket();
+		$pk->eid = $this->target->getId();
+		$pk->metadata = $dataProperty;
+
+		Server::broadcastPacket($this->target->getLevel()->getPlayers(), $pk->setChannel(Network::CHANNEL_WORLD_EVENTS));
+
+		unset(FlameThrower::$tasks[$this->target->getName()]);
 	}
 }

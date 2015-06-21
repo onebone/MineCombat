@@ -21,6 +21,8 @@ namespace onebone\minecombat;
 
 use onebone\minecombat\grenade\BaseGrenade;
 use onebone\minecombat\gun\BaseGun;
+use onebone\minecombat\gun\Bazooka;
+use onebone\minecombat\gun\FlameThrower;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
@@ -556,7 +558,11 @@ class MineCombat extends PluginBase implements Listener{
 	
 	public function onDeath(PlayerDeathEvent $event){
 		$player = $event->getEntity();
-		
+
+		if(isset(FlameThrower::$tasks[$player->getName()])){
+			FlameThrower::$tasks[$player->getName()]->getHandler()->cancel();
+		}
+
 		if($this->status === self::STAT_GAME_IN_PROGRESS){
 			$items = $event->getDrops();
 			foreach($items as $key => $item){
@@ -566,6 +572,24 @@ class MineCombat extends PluginBase implements Listener{
 			}
 			$event->setDrops($items);
 			$cause = $player->getLastDamageCause();
+
+			if($cause !== null && $cause->getCause() == EntityDamageEvent::CAUSE_FALL){
+				if($this->players[$player->getName()][2] === self::TEAM_BLUE){
+					$playerColor = TextFormat::BLUE;
+					$damagerColor = TextFormat::RED;
+					$this->score[self::TEAM_RED]++;
+				}else{
+					$playerColor = TextFormat::RED;
+					$damagerColor = TextFormat::BLUE;
+					$this->score[self::TEAM_BLUE]++;
+				}
+				$firstKill = "";
+				if($this->score[self::TEAM_BLUE] + $this->score[self::TEAM_RED] <= 1){
+					$firstKill = TextFormat::YELLOW."FIRST BLOOD\n".TextFormat::WHITE;
+				}
+				$this->broadcastPopup($firstKill.$playerColor.$player->getName().$damagerColor." SUICIDED");
+			}
+
 			if(!($cause instanceof EntityDamageByEntityEvent)){
 				return;
 			}

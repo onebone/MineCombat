@@ -49,8 +49,8 @@ class Bazooka extends BaseGun{
 		$pk->radius = 10;
 		$pk->records = [new Vector3($this->player->getX(), $this->player->getY() + 1.62, $this->player->getZ())];
 		Server::broadcastPacket($this->getPlayer()->getLevel()->getChunkPlayers($this->player->getX() >> 4, $this->player->getZ() >> 4), $pk->setChannel(Network::CHANNEL_BLOCKS));
-		$vec = $this->player->getDirectionVector()->multiply(0.9);
-		$this->player->setMotion(new Vector3(- $vec->getX(), - $vec->getY(), - $vec->getZ()));
+		$vec = $this->player->getDirectionVector()->multiply(0.5);
+		$this->player->setMotion($this->player->getMotion()->subtract($vec));
 	}
 
 	public function canShoot(){
