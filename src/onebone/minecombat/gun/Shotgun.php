@@ -58,6 +58,10 @@ class Shotgun extends BaseGun{
 			$target->attack($damage, new EntityDamageByEntityEvent($this->getPlayer(), $target, 15, $damage, 0));
 		}
 	}
+	
+	public function getGunItem(){
+		return "";
+	}
 
 	public function getDamage($distance){
 		return 7; // TODO: Damage by distance

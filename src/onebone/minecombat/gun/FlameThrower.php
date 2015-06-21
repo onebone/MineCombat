@@ -85,6 +85,10 @@ class FlameThrower extends BaseGun{
 		$pk->metadata = $dataProperty;
 		Server::broadcastPacket($this->getPlayer()->getLevel()->getPlayers(), $pk->setChannel(Network::CHANNEL_WORLD_EVENTS));
 	}
+	
+	public function getGunItem(){
+		return Item::get(259);
+	}
 
 	public static function getName(){
 		return "Flame Thrower";

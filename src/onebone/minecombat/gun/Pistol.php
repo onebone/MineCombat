@@ -63,6 +63,14 @@ class Pistol extends BaseGun{
 	public function getDamage($distance){
 		return 5; // TODO: Damage by distance
 	}
+	
+	public function getMagazineAmmo(){
+		return 30;
+	}
+	
+	public function getGunItem(){
+		return "105:0";
+	}
 
 	public static function getName(){
 		return "Desert Eagle";

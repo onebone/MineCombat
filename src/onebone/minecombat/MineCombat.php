@@ -19,10 +19,6 @@
 
 namespace onebone\minecombat;
 
-use onebone\minecombat\grenade\BaseGrenade;
-use onebone\minecombat\gun\BaseGun;
-use onebone\minecombat\gun\Bazooka;
-use onebone\minecombat\gun\FlameThrower;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat;
@@ -42,8 +38,11 @@ use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\player\PlayerDropItemEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\inventory\InventoryPickupItemEvent;
+use pocketmine\event\player\PlayerItemHeldEvent;
 use pocketmine\scheduler\AsyncTask;
 
+use onebone\minecombat\grenade\BaseGrenade;
+use onebone\minecombat\gun\BaseGun;
 use onebone\minecombat\gun\Pistol;
 use onebone\minecombat\grenade\FragmentationGrenade;
 use onebone\minecombat\task\GameStartTask;
@@ -66,6 +65,11 @@ class MineCombat extends PluginBase implements Listener{
 	const GUN_ID = Item::MELON_STEM;
 
 	private $rank, $players, $score, $status, $spawnPos = null, $nextLevel = null, $level, $killDeath;
+	
+	/** @var $loadedGuns string[] */
+	private $loadedGuns = [];
+	
+	private $gunCache = [];
 	
 	private static $obj;
 
@@ -187,6 +191,8 @@ class MineCombat extends PluginBase implements Listener{
 		$this->getServer()->broadcastMessage(TextFormat::GREEN."[MineCombat] Game has been finished. ".$winner);
 		
 		$this->prepareGame();
+		
+		$this->gunCache = [];
 	}
 	
 	public function isEnemy($player1, $player2){
@@ -289,12 +295,70 @@ class MineCombat extends PluginBase implements Listener{
 		$this->getServer()->getScheduler()->scheduleAsyncTask($task);
 	}
 	
+	public function loadGun($path){
+		$phar = new \Phar($path);
+		if(isset($phar["gun_info.yml"])){
+			$info = $phar["gun_info.yml"];
+			if($info instanceof \PharFileInfo){
+				$file = "phar://$path";
+				
+				$gun_info = yaml_parse($info->getContent());
+				$this->getServer()->getLoader()->addPath($file."/src");
+				
+				$main = $gun_info["main"];
+				$item = $gun_info["item"];
+				$name = $gun_info["name"];
+				$author = $gun_info["author"];
+				$this->getLogger()->info("Custom weapon ".TextFormat::AQUA.$name.TextFormat::RESET." by ".TextFormat::GOLD.$author.TextFormat::RESET." is being loaded.");
+				
+				if(isset($this->loadedGuns[$item])){
+					$this->getLogger()->info($path.": Already item has been registered.");
+					return false;
+				}
+				
+				if(class_exists($main, true)){
+					$gun = new \ReflectionClass($main);
+					if(!$gun->isSubclassOf("\\onebone\\minecombat\\gun\\BaseGun")){
+						$this->getLogger()->warning($path." is not valid gun! Aborting register!");
+						return false;
+					}
+					$this->loadedGuns[$item] = $main;
+					return true;
+				}else{
+					$this->getLogger()->warning($path." is not valid gun! Aborting register!");
+					return false;
+				}
+			}else{
+				$this->getLogger()->warning($path.": Not valid information");
+			}
+		}
+		return false;
+	}
+	
+	public function loadGuns($directory){
+		if(!is_dir($directory)) return false;
+		$cnt = 0;
+		$directory .= "/";
+		foreach(new \RegexIterator(new \DirectoryIterator($directory), "/\\.phar$/i") as $file){
+			if($file !== "." and $file !== ".."){
+				if($this->loadGun($directory.$file)){
+					++$cnt;
+				}
+			}
+		}
+		$this->getLogger()->notice($cnt." custom weapons are detected!");
+	}
+	
 	public function onEnable(){
 		self::$obj = $this;
 		
 		if(!file_exists($this->getDataFolder())){
 			mkdir($this->getDataFolder());
 		}
+		if(!file_exists($this->getDataFolder()."guns")){
+			mkdir($this->getDataFolder()."guns");
+		}
+		
 		if(!is_file($this->getDataFolder()."rank.dat")){
 			file_put_contents($this->getDataFolder()."rank.dat", serialize([]));
 		}
@@ -327,12 +391,20 @@ class MineCombat extends PluginBase implements Listener{
 			$this->getLogger()->warning("$cnt positions are not set correctly.");
 		}
 		if($spawnPos !== [] and $spawnPos !== null){ // TODO: Fix here
-			$this->getLogger()->notice(count($spawnPos)." of positions are found.");
+			$this->getLogger()->notice(count($spawnPos)." of battle positions have been found.");
 			$this->prepareGame();
 		}else{
 			$this->getLogger()->warning("Set the spawn position of each team by /spawnpos and restart server to start the match.");
 			return;
 		}
+		
+		$this->loadedGuns = [
+			/*"259:0" => "\\onebone\\minecombat\\gun\\FlameThrower",
+			"352:0" => "\\onebone\\minecombat\\gun\\Shotgun",
+			"338:0" => "\\onebone\\minecombat\\gun\\Bazooka",*/
+			"105:0" => "\\onebone\\minecombat\\gun\\Pistol"
+		];
+		$this->loadGuns($this->getDataFolder()."guns");
 		
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->getServer()->getScheduler()->scheduleRepeatingTask(new PopupTask($this), 10);
@@ -484,7 +556,7 @@ class MineCombat extends PluginBase implements Listener{
 			$player = $event->getPlayer();
 			$item = $player->getInventory()->getItemInHand();
 			if($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK){
-				if($item->getId() === self::GUN_ID){
+				if($item->getId().":".$item->getDamage() === $this->players[$player->getName()][0]->getGunItem()){
 					$this->players[$player->getName()][0]->shoot();
 				}
 			}elseif($event->getAction() === PlayerInteractEvent::RIGHT_CLICK_AIR){
@@ -493,6 +565,7 @@ class MineCombat extends PluginBase implements Listener{
 					$player->getInventory()->removeItem(Item::get(self::GRENADE_ID, 0, 1));
 				}
 			}
+			$event->setCancelled();
 		}
 	}
 	
@@ -564,14 +637,10 @@ class MineCombat extends PluginBase implements Listener{
 	public function onDeath(PlayerDeathEvent $event){
 		$player = $event->getEntity();
 
-		if(isset(FlameThrower::$tasks[$player->getName()])){
-			FlameThrower::$tasks[$player->getName()]->getHandler()->cancel();
-		}
-
 		if($this->status === self::STAT_GAME_IN_PROGRESS){
 			$items = $event->getDrops();
 			foreach($items as $key => $item){
-				if($item->getId() !== self::GUN_ID){
+				if(!isset($this->loadedGuns[$item->getId().":".$item->getDamage()])){
 					unset($items[$key]);
 				}
 			}
@@ -671,6 +740,9 @@ class MineCombat extends PluginBase implements Listener{
 		if(isset($this->players[$player->getName()][0])){
 			$this->players[$player->getName()][0]->setAmmo($this->players[$player->getName()][0]->getDefaultAmmo());
 		}
+		if(isset($this->gunCache[$player->getName()])){
+			unset($this->gunCache[$player->getName()]);
+		}
 	}
 	
 	public function onDamage(EntityDamageEvent $event){
@@ -697,27 +769,49 @@ class MineCombat extends PluginBase implements Listener{
 	}
 	
 	public function onDropItem(PlayerDropItemEvent $event){
-		$item = $event->getItem();
+		/*$item = $event->getItem();
 		
 		if($item->getId() === self::GRENADE_ID){
 			$event->setCancelled();
 		}elseif($item->getId() === self::GUN_ID){
 			$event->setCancelled();
-		}
+		}*/
+		$event->setCancelled();
 	}
 	
 	public function onPickup(InventoryPickupItemEvent $event){
 		$player = $event->getInventory()->getHolder();
 		
 		if($player instanceof Player){
-			if($event->getItem()->getItem()->getId() === self::GUN_ID){
-				$this->players[$player->getName()][0]->addAmmo(30);
+			$item = $event->getItem()->getItem();
+			if(isset($this->loadedGuns[$item->getId().":".$item->getDamage()])){
+				$gun = $this->players[$player->getName()][0];
+				$gun->addAmmo($gun->getMagazineAmmo());
 				if($player->getInventory()->contains(Item::get(self::GUN_ID))){
 					$event->getItem()->kill();
 					$event->setCancelled();
 				}
 			}else{
 				$event->getItem()->kill();
+			}
+		}
+	}
+	
+	public function onItemHeld(PlayerItemHeldEvent $event){
+		$player = $event->getPlayer();
+		
+		$item = $event->getItem();
+		if(isset($this->loadedGuns[$item->getId().":".$item->getDamage()])){
+			$teamColor = [
+				self::TEAM_BLUE => [40, 45, 208],
+				self::TEAM_RED => [247, 2, 9],
+				-1 => [175, 175, 175]
+			];
+			if(isset($this->gunCache[$player->getName()][$item->getId().":".$item->getDamage()])){
+				$this->players[$player->getName()][0] = $this->gunCache[$player->getName()][$item->getId().":".$item->getDamage()];
+			}else{
+				$this->players[$player->getName()][0] = new $this->loadedGuns[$item->getId().":".$item->getDamage()]($this, $player, $teamColor[$this->players[$player->getName()][2]]);
+				$this->gunCache[$player->getName()][$item->getId().":".$item->getDamage()] = $this->players[$player->getName()][0];
 			}
 		}
 	}
