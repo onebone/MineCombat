@@ -164,13 +164,6 @@ class MineCombat extends PluginBase implements Listener{
 			$this->teleportToSpawn($player);
 			$player->setHealth(20);
 			
-			if(!$player->getInventory()->contains(Item::get(self::GRENADE_ID))){
-				$player->getInventory()->addItem(Item::get(self::GRENADE_ID, 0, 2));
-			}
-			
-			if(!$player->getInventory()->contains(Item::get(self::GUN_ID))){
-				$player->getInventory()->addItem(Item::get(self::GUN_ID));
-			}
 			if(isset($this->players[$player->getName()][0])){
 				$this->players[$player->getName()][0]->setAmmo($this->players[$player->getName()][0]->getDefaultAmmo());
 			}
@@ -598,14 +591,6 @@ class MineCombat extends PluginBase implements Listener{
 	public function onJoinEvent(PlayerJoinEvent $event){
 		$player = $event->getPlayer();
 		
-		if(!$player->getInventory()->contains(Item::get(self::GUN_ID))){
-			$player->getInventory()->addItem(Item::get(self::GUN_ID));
-		}
-		
-		if(!$player->getInventory()->contains(Item::get(self::GRENADE_ID))){
-			$player->getInventory()->addItem(Item::get(self::GRENADE_ID, 2));
-		}
-		
 		if($this->status === self::STAT_GAME_IN_PROGRESS){
 			$redTeam = $this->getPlayersCountOnTeam(self::TEAM_RED);
 			$blueTeam = $this->getPlayersCountOnTeam(self::TEAM_BLUE);
@@ -822,7 +807,7 @@ class MineCombat extends PluginBase implements Listener{
 		}
 	}
 
-	public function giveGun($player, BaseGun $gun){
+	public function giveGun($player){
 		switch($this->players[$player][2]){
 			case self::TEAM_RED: $color = [247, 2, 9]; break;
 			case self::TEAM_BLUE: $color = [40, 45, 208]; break;
