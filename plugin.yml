@@ -1,6 +1,7 @@
 name: MineCombat
 version: "1.0"
 author: onebone
+authors: [onebone, Khinenw]
 main: onebone\minecombat\MineCombat
 api: [1.12.0]
 
