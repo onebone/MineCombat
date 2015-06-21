@@ -171,7 +171,9 @@ abstract class BaseGun{
 	public function setShoot($isShooting){
 		$this->shoot = $isShooting;
 	}
-
+	
+	public static function init(){}
+	
 	abstract public function getGunItem();
 	abstract public function onShot(Player $target);
 	abstract public function getDamage($distance);

@@ -325,6 +325,8 @@ class MineCombat extends PluginBase implements Listener{
 						$this->getLogger()->warning($path." is not valid gun! Aborting register!");
 						return false;
 					}
+					
+					$main::init();
 					$this->loadedGuns[$item] = $main;
 					return true;
 				}else{
