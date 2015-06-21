@@ -243,7 +243,6 @@ class MineCombat extends PluginBase implements Listener{
 	
 	public function showPopup(){
 		if($this->status === self::STAT_GAME_IN_PROGRESS){
-
 			foreach($this->getServer()->getOnlinePlayers() as $player){
 				if(!isset($this->players[$player->getName()])) continue;
 				if($this->players[$player->getName()][2] === self::TEAM_RED){
@@ -275,15 +274,15 @@ class MineCombat extends PluginBase implements Listener{
 	}
 
 	public static function getClassColor($class){
-		switch($class){
-			case "A": $color = TextFormat::BLUE;break;
-			case "B": $color = TextFormat::AQUA;break;
-			case "C": $color = TextFormat::GREEN;break;
-			case "D": $color = TextFormat::GOLD;break;
-			case "E": $color = TextFormat::RED;break;
-			default: $color = TextFormat::GRAY;break;
-		}
-		return $color;
+		$colorArr = [
+			"A" => TextFormat::BLUE,
+			"B" => TextFormat::AQUA,
+			"C" => TextFormat::GREEN,
+			"D" => TextFormat::GOLD,
+			"E" => TextFormat::RED
+		];
+		
+		return (isset($colorArr[$class]) === true) ? $colorArr[$class] : TextFormat::GRAY;
 	}
 	
 	public function submitAsyncTask(AsyncTask $task){
@@ -317,12 +316,18 @@ class MineCombat extends PluginBase implements Listener{
 		
 		$spawnPos = $this->getConfig()->get("spawn-pos");
 		
+		$cnt = 0;
 		foreach($spawnPos as $key => $data){
 			if(!isset($data["blue"]) or !isset($data["red"])){
 				unset($spawnPos[$key]);
+				++$cnt;
 			}
 		}
+		if($cnt > 0){
+			$this->getLogger()->warning("$cnt positions are not set correctly.");
+		}
 		if($spawnPos !== [] and $spawnPos !== null){ // TODO: Fix here
+			$this->getLogger()->notice(count($spawnPos)." of positions are found.");
 			$this->prepareGame();
 		}else{
 			$this->getLogger()->warning("Set the spawn position of each team by /spawnpos and restart server to start the match.");
