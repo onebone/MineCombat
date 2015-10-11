@@ -25,6 +25,8 @@ use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 
 use onebone\minecombat\data\PlayerContainer;
+use onebone\minecombat\gun\BaseGun;
+use onebone\minecombat\gun\Pistol;
 
 class MineCombat extends PluginBase implements Listener{
 	/** @var PlayerContainer[] $players */
@@ -80,7 +82,9 @@ class MineCombat extends PluginBase implements Listener{
 			$this->players[$iusername] = new PlayerContainer($iusername);
 		}
 
-		$this->players[$iusername]->setCurrentGun(new Pistol($player->getName())); // TODO: Set different gun if others available
+		if(!$this->players[$iusername]->getCurrentGun() instanceof BaseGun){
+			$this->players[$iusername]->setCurrentGun(new Pistol($player->getName())); // TODO: Set different gun if others available
+		}
 
 		if($this->players[$iusername]->getLastGame() !== $this->currentGame){
 			$gun = $this->players[$iusername]->getCurrentGun();
