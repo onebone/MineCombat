@@ -1,0 +1,13 @@
+## Configuration file for MineCombat
+
+# Preparation time before starting game (seconds)
+# default: 60 seconds (1 min.)
+preparation-time: 60
+
+# Time for doing game (seconds)
+# default: 600 seconds (10 min.)
+game-time: 600
+
+# Minimum players to start game (players)
+# default: 4 players (4 hum.)
+min-players: 4

@@ -35,6 +35,7 @@ class MineCombat extends PluginBase implements Listener{
 			mkdir($this->getDataFolder());
 		}
 		$this->initializeData();
+		$this->saveDefaultConfig();
 
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 	}
