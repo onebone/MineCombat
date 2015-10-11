@@ -29,7 +29,7 @@ abstract class BaseGun{
 	/** @var int 		$lastShot */
 	protected $lastShot = 0;
 
-	public function __construct($player, $allAmmo = 50, $ammo = 15){
+	public function __construct($player, $allAmmo = 50, $ammo = 0){
 		$this->player = $player;
 		$this->allAmmo = $allAmmo;
 		$this->ammo = $ammo;
@@ -43,8 +43,28 @@ abstract class BaseGun{
 	 * Reloads ammo to the magazine
 	 */
 	public function reload(){
-		$this->ammo += min($this->getMaxMagazineAmmo(), $this->allAmmo);
-		$this->allAmmo -= min($this->getMaxMagazineAmmo(), $this->allAmmo);
+		$amount = min($this->getMaxMagazineAmmo() - $this->ammo, $this->allAmmo);
+
+		$this->ammo += $amount;
+		$this->allAmmo -= $amount;
+	}
+
+	/**
+	 * Sets the ammo of the gun
+	 *
+	 * @var int		$ammo
+	 */
+	public function setAmmo($ammo){
+		$this->ammo = $ammo;
+	}
+
+	/**
+	 * Sets the ammo of the gun
+	 *
+	 * @var int		$ammo
+	 */
+	public function setAllAmmo($allAmmo){
+		$this->allAmmo = $allAmmo;
 	}
 
 	/**
@@ -104,6 +124,11 @@ abstract class BaseGun{
 	public function getRange(){
 		return 30;
 	}
+
+	/**
+	 * @return string
+	 */
+	abstract public function getName();
 
 	/**
 	 * @return string

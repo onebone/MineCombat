@@ -27,8 +27,11 @@ use pocketmine\event\player\PlayerQuitEvent;
 use onebone\minecombat\data\PlayerContainer;
 use onebone\minecombat\gun\BaseGun;
 use onebone\minecombat\gun\Pistol;
+use onebone\minecombat\task\RepeatTask;
 
 class MineCombat extends PluginBase implements Listener{
+	const FORMAT = "%team\nScores: %score / %xpxp\nWeapon: %weapon, Ammo : %ammo/%allAmmo";
+
 	/** @var PlayerContainer[] $players */
 	private $players = [];
 	/** @var int $currentGame */
@@ -61,6 +64,8 @@ class MineCombat extends PluginBase implements Listener{
 		$this->saveDefaultConfig();
 
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
+
+		$this->getServer()->getScheduler()->scheduleDelayedRepeatingTask(new RepeatTask($this), 10, 10);
 	}
 
 	private function initializeData(){
@@ -72,6 +77,16 @@ class MineCombat extends PluginBase implements Listener{
 		$players = json_decode(file_get_contents($this->getDataFolder()."players.json"), true);
 		foreach($players as $player){
 			$this->players[$player["name"]] = new PlayerContainer($player["name"], $player["xp"], $player["coins"]);
+		}
+	}
+
+	public function tick(){
+		// TODO: Implement checking game status
+		foreach($this->getServer()->getOnlinePlayers() as $player){
+			if(!isset($this->players[strtolower($player->getName())])) continue;
+			$data = $this->players[strtolower($player->getName())];
+			$gun = $data->getCurrentGun();
+			$player->sendPopup(str_replace(["%team", "%score", "%xp", "%weapon", "%ammo", "%allAmmo"], ["", "", $data->getXp(), $gun->getName(), $gun->getAmmo(), $gun->getAllAmmo()], self::FORMAT)); // TODO: Implement team, score
 		}
 	}
 
@@ -88,7 +103,8 @@ class MineCombat extends PluginBase implements Listener{
 
 		if($this->players[$iusername]->getLastGame() !== $this->currentGame){
 			$gun = $this->players[$iusername]->getCurrentGun();
-			$gun->setAmmo($gun->getDefaultAmmo());
+			$gun->setAllAmmo($gun->getDefaultAmmo());
+			$gun->reload();
 		}
 	}
 
