@@ -44,6 +44,20 @@ abstract class BaseGun{
 	}
 
 	/**
+	 * @return int
+	 */
+	public function getDefaultAmmo(){
+		return 50;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getPickupAmmo(){
+		return 30;
+	}
+
+	/**
 	 * @return string
  	 */
 	abstract public function getClass();

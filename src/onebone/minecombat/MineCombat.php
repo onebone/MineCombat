@@ -29,6 +29,8 @@ use onebone\minecombat\data\PlayerContainer;
 class MineCombat extends PluginBase implements Listener{
 	/** @var PlayerContainer[] $players */
 	private $players = [];
+	/** @var int $currentGame */
+	private $currentGame = 0;
 
 	public function onEnable(){
 		if(!file_exists($this->getDataFolder())){
@@ -41,12 +43,12 @@ class MineCombat extends PluginBase implements Listener{
 	}
 
 	private function initializeData(){
-		if(!is_file($this->getDataFolder()."players.dat")){
-			file_put_contents($this->getDataFolder()."players.dat", json_encode([]));
+		if(!is_file($this->getDataFolder()."players.json")){
+			file_put_contents($this->getDataFolder()."players.json", json_encode([]));
 		}
 
 		$this->players = [];
-		$players = json_decode(file_get_contents($this->getDataFolder()."players.dat"), true);
+		$players = json_decode(file_get_contents($this->getDataFolder()."players.json"), true);
 		foreach($players as $player){
 			$this->players[$player["name"]] = new PlayerContainer($player["name"], $player["xp"], $player["coins"]);
 		}
@@ -55,8 +57,12 @@ class MineCombat extends PluginBase implements Listener{
 	public function onPlayerJoin(PlayerJoinEvent $event){
 		$player = $event->getPlayer();
 		$iusername = strtolower($player->getName());
-		if(!isset($this->players[$iusername])){
+		if(!isset($this->players[$iusername]) or !$this->players[$iusername] instanceof PlayerContainer){
 			$this->players[$iusername] = new PlayerContainer($iusername);
+		}
+
+		if($this->players[$iusername]->getLastGame() !== $this->currentGame){
+			// TODO: Reset gun data
 		}
 	}
 
