@@ -31,6 +31,25 @@ class MineCombat extends PluginBase implements Listener{
 	private $players = [];
 	/** @var int $currentGame */
 	private $currentGame = 0;
+	/** @var string[] $loadedGuns */
+	private $loadedGuns = [];
+
+	/**
+	 * Returns gun class matching name
+	 * @var string name
+	 *
+	 * @return string
+	 */
+	public function getGunByName($name){
+		$iname = strtolower($name);
+		foreach($this->loadedGuns as $gun){
+			$reflection = new \ReflectionClass($gun);
+			if(strtolower($reflection->getShortName()) === $iname){
+				return $gun;
+			}
+		}
+		return null;
+	}
 
 	public function onEnable(){
 		if(!file_exists($this->getDataFolder())){
@@ -61,8 +80,11 @@ class MineCombat extends PluginBase implements Listener{
 			$this->players[$iusername] = new PlayerContainer($iusername);
 		}
 
+		$this->players[$iusername]->setCurrentGun(new Pistol($player->getName())); // TODO: Set different gun if others available
+
 		if($this->players[$iusername]->getLastGame() !== $this->currentGame){
-			// TODO: Reset gun data
+			$gun = $this->players[$iusername]->getCurrentGun();
+			$gun->setAmmo($gun->getDefaultAmmo());
 		}
 	}
 

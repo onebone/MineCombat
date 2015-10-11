@@ -22,24 +22,54 @@ namespace onebone\minecombat\gun;
 abstract class BaseGun{
 	/** @var string $player */
 	protected $player;
+	/** @var int		$allAmmo */
+	protected $allAmmo = 50;
 	/** @var int 		$ammo */
-	protected $ammo = 50;
+	protected $ammo = 15;
 	/** @var int 		$lastShot */
 	protected $lastShot = 0;
 
-	public function __construct($player, $ammo = 50){
+	public function __construct($player, $allAmmo = 50, $ammo = 15){
 		$this->player = $player;
+		$this->allAmmo = $allAmmo;
 		$this->ammo = $ammo;
 	}
 
 	public function shoot(){
+		$this->lastShot = microtime(true);
+	}
 
+	/**
+	 * Reloads ammo to the magazine
+	 */
+	public function reload(){
+		$this->ammo += min($this->getMaxMagazineAmmo(), $this->allAmmo);
+		$this->allAmmo -= min($this->getMaxMagazineAmmo(), $this->allAmmo);
+	}
+
+	/**
+	 * Returns amount of ammo that is reloaded and available to use
+	 *
+	 * @return int
+	 */
+	public function getAmmo(){
+		return $this->ammo;
+	}
+
+	/**
+	 * Returns amount of all ammo that is not reloaded
+	 *
+	 * @return int
+	 */
+	public function getAllAmmo(){
+		return $this->allAmmo;
 	}
 
 	/**
 	 * @return bool
 	 */
 	public function canShoot(){
+		if($this->getAmmo() <= 0) return false;
 		return true;
 	}
 
@@ -54,6 +84,24 @@ abstract class BaseGun{
 	 * @return int
 	 */
 	public function getPickupAmmo(){
+		return 15;
+	}
+
+	/**
+	 * Returns the max amount of ammo that can be reloaded in magazine
+	 *
+	 * @return int
+	 */
+	public function getMaxMagazineAmmo(){
+		return 15;
+	}
+
+	/**
+	 * Returns range of gun can shoot
+	 *
+	 * @return int
+	 */
+	public function getRange(){
 		return 30;
 	}
 

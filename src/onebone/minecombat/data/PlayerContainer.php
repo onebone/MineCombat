@@ -36,13 +36,13 @@ class PlayerContainer{
 	 * @var int			$xp
 	 * @var int			$coins
 	 */
-	public function __construct($username, $xp = 0, $coins = 0, $lastGame = -1){
+	public function __construct($username, $xp = 0, $coins = 0, $gun = null, $lastGame = -1){
 		$this->player = strtolower($username);
 		$this->xp = 0;
 		$this->coins = 0;
 		$this->lastGame = $lastGame;
 
-		$this->gun = null;
+		$this->gun = $gun;
 	}
 
 	/**
