@@ -23,6 +23,9 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\event\player\PlayerInteractEvent;
+
+use pocketmine\level\particle\DustParticle;
 
 use onebone\minecombat\data\PlayerContainer;
 use onebone\minecombat\gun\BaseGun;
@@ -108,7 +111,29 @@ class MineCombat extends PluginBase implements Listener{
 		}
 	}
 
+	public function onPlayerTouch(PlayerInteractEvent $event){
+		$player = $event->getPlayer();
+		$block = $event->getBlock();
+
+		$xcos = cos(($player->yaw-90)/180 * M_PI);
+		$zcos = sin(($player->yaw-90)/180 * M_PI);
+		$pcos = cos(($player->pitch + 90)/180 * M_PI);
+
+		$x_ = $player->getX();
+		$y_ = $player->getY();
+		$z_ = $player->getZ();
+		for($o_=0; $o_<100;$o_++){
+			$x = $x_ - ($o_ * $xcos);
+			$y = $y_ + ($o_ * $pcos);
+			$z = $z_ - ($o_ * $zcos);
+			$player->getLevel()->setBlock(new \pocketmine\math\Vector3($x, $y, $z), \pocketmine\block\Block::get(1,0));
+		}
+	}
+
 	public function onPlayerQuit(PlayerQuitEvent $event){
+		$player = $event->getPlayer();
+		$iusername = strtolower($player->getName());
+
 		if(isset($this->players[$iusername])){
 
 		}
