@@ -31,9 +31,12 @@ use onebone\minecombat\data\PlayerContainer;
 use onebone\minecombat\gun\BaseGun;
 use onebone\minecombat\gun\Pistol;
 use onebone\minecombat\task\RepeatTask;
+use onebone\minecombat\task\ProcessThread;
 
 class MineCombat extends PluginBase implements Listener{
 	const FORMAT = "%team\nScores: %score / %xpxp\nWeapon: %weapon, Ammo : %ammo/%allAmmo";
+
+	private static $instance = null;
 
 	/** @var PlayerContainer[] $players */
 	private $players = [];
@@ -57,6 +60,10 @@ class MineCombat extends PluginBase implements Listener{
 			}
 		}
 		return null;
+	}
+
+	public function __construct(){
+		self::$instance = $this;
 	}
 
 	public function onEnable(){
@@ -114,20 +121,28 @@ class MineCombat extends PluginBase implements Listener{
 	public function onPlayerTouch(PlayerInteractEvent $event){
 		$player = $event->getPlayer();
 		$block = $event->getBlock();
+		$iusername = strtolower($player->getName());
 
-		$xcos = cos(($player->yaw-90)/180 * M_PI);
-		$zcos = sin(($player->yaw-90)/180 * M_PI);
+		if(isset($this->players[$iusername]) or !$this->players[$iusername] instanceof PlayerContainer){ // TODO: Check item
+			$this->players[$iusername]->getCurrentGun()->shoot();
+		}else{
+			$player->kick("Invalid data");
+		}
+		/* // TODO: Remove test code
+		$xcos = cos(($player->yaw + 90)/180 * M_PI);
+		$zcos = sin(($player->yaw + 90)/180 * M_PI);
 		$pcos = cos(($player->pitch + 90)/180 * M_PI);
 
 		$x_ = $player->getX();
 		$y_ = $player->getY();
 		$z_ = $player->getZ();
 		for($o_=0; $o_<100;$o_++){
-			$x = $x_ - ($o_ * $xcos);
+			$x = $x_ + ($o_ * $xcos);
 			$y = $y_ + ($o_ * $pcos);
-			$z = $z_ - ($o_ * $zcos);
+			$z = $z_ + ($o_ * $zcos);
 			$player->getLevel()->setBlock(new \pocketmine\math\Vector3($x, $y, $z), \pocketmine\block\Block::get(1,0));
 		}
+		*/
 	}
 
 	public function onPlayerQuit(PlayerQuitEvent $event){
