@@ -115,6 +115,8 @@ class MineCombat extends PluginBase implements Listener{
 			$gun = $this->players[$iusername]->getCurrentGun();
 			$gun->setAllAmmo($gun->getDefaultAmmo());
 			$gun->reload();
+
+			$player->setHealth(20);
 		}
 	}
 
