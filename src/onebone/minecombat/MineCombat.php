@@ -24,6 +24,7 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\event\player\PlayerInteractEvent;
+use pocketmine\event\player\PlayerCommandPreprocessEvent;
 
 use pocketmine\level\particle\DustParticle;
 
@@ -145,6 +146,15 @@ class MineCombat extends PluginBase implements Listener{
 			$player->getLevel()->setBlock(new \pocketmine\math\Vector3($x, $y, $z), \pocketmine\block\Block::get(1,0));
 		}
 		*/
+	}
+
+	public function onPlayerCommandPreprocess(PlayerCommandPreprocessEvent $event){
+		$command = strtolower(substr($event->getMessage(), 0, 5));
+		if($command === "/kill"){
+			if($this->getConfig()->get("allow-suicide") !== true){
+				$event->setCancelled();
+			}
+		}
 	}
 
 	public function onPlayerQuit(PlayerQuitEvent $event){

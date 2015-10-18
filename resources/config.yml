@@ -11,3 +11,7 @@ game-time: 600
 # Minimum players to start game (players)
 # default: 4 players (4 hum.)
 min-players: 4
+
+# Allow player to suicide
+# default: false (cannot suicide)
+allow-suicide: false
